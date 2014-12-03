@@ -2,7 +2,7 @@
 
 <project name="Orchard" default="build">
     <target name="build"
-            depends="prepare,composer,phpunit,phpcs"/>
+            depends="prepare,composer,phpunit,pdepend,phpcs"/>
 
     <target name="clean" description="Cleanup build artifacts">
         <delete dir="${basedir}/build/api"/>
