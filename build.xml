@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="Orchard" default="build">
+    <target name="build"
+            depends="prepare,composer,lint,phpunit,phpcs"/>
+
+    <target name="clean" description="Cleanup build artifacts">
+        <delete dir="${basedir}/build/api"/>
+        <delete dir="${basedir}/build/code-browser"/>
+        <delete dir="${basedir}/build/coverage"/>
+        <delete dir="${basedir}/build/logs"/>
+        <delete dir="${basedir}/build/pdepend"/>
+        <delete file="${basedir}/library/composer.lock"/>
+    </target>
+
+    <target name="prepare" depends="clean" description="Prepare for build">
+        <mkdir dir="${basedir}/build/api"/>
+        <mkdir dir="${basedir}/build/code-browser"/>
+        <mkdir dir="${basedir}/build/coverage"/>
+        <mkdir dir="${basedir}/build/logs"/>
+        <mkdir dir="${basedir}/build/pdepend"/>
+    </target>
+
+    <target name="composer" description="Install dependencies">
+        <exec executable="wget" failonerror="true">
+            <arg value="-nc"/>
+            <arg value="http://getcomposer.org/composer.phar"/>
+        </exec>
+        <exec executable="php" failonerror="true">
+            <arg value="composer.phar"/>
+            <arg value="install"/>
+            <arg value="--dev"/>
+            <arg value="--prefer-dist"/>
+            <arg value="--working-dir=${basedir}/library"/>
+        </exec>
+    </target>
+
+    <target name="lint">
+        <apply executable="/usr/local/bin/php" failonerror="true">
+            <arg value="-l"/>
+
+            <fileset dir="${basedir}">
+                <include name="**/*.php"/>
+                <exclude name="library/Doctrine/**"/>
+                <exclude name="library/ExcelExplorerPro/**"/>
+                <exclude name="library/getid3/**"/>
+                <exclude name="library/Zend/**"/>
+                <exclude name="library/ZendX/**"/>
+                <exclude name="library/ZFDebug/**"/>
+                <exclude name="library/GoogleApi/**"/>
+                <exclude name="library/vendor/**"/>
+                <exclude name="library/SeleniumWd/**"/>
+                <exclude name="library/PHPUnitX/**"/>
+                <exclude name="library/Ioda/**"/>
+                <exclude name="library/Html5/**"/>
+                <exclude name="library/Cron/**"/>
+                <exclude name="library/Bootstrap/**"/>
+                <exclude name="public/amfphp/**"/>
+                <exclude name="public/includes/phpchart/**"/>
+                <exclude name="public/includes/phpmailer/**"/>
+                <exclude name="public/includes/xmlchart/**"/>
+            </fileset>
+
+        </apply>
+    </target>
+
+    <target name="phpunit" description="Run unit tests with PHPUnit">
+        <exec executable="${basedir}/library/vendor/bin/phpunit" dir="${basedir}/tests" failonerror="false"/>
+    </target>
+
+    <target name="parallelTasks"
+            description="Run code analysis tasks in parallel">
+        <parallel threadCount="3">
+            <sequential>
+                <antcall target="pdepend"/>
+                <antcall target="phpmd"/>
+            </sequential>
+            <antcall target="phpcpd"/>
+            <antcall target="phploc"/>
+        </parallel>
+    </target>
+
+    <target name="pdepend"
+            description="Calculate software metrics using PHP_Depend">
+        <exec executable="${basedir}/library/vendor/bin/pdepend">
+            <arg value="--jdepend-xml=${basedir}/build/logs/jdepend.xml"/>
+            <arg value="--jdepend-chart=${basedir}/build/pdepend/dependencies.svg"/>
+            <arg value="--overview-pyramid=${basedir}/build/pdepend/overview-pyramid.svg"/>
+            <arg value="--ignore=${exclusionlistwithslashes}"/>
+            <arg path="${basedir}"/>
+        </exec>
+    </target>
+
+    <target name="phpmd"
+            description="Perform project mess detection using PHPMD">
+        <exec executable="${basedir}/library/vendor/bin/phpmd" dir="${basedir}">
+            <arg value="."/>
+            <arg value="xml"/>
+            <arg value="codesize,design,unusedcode,naming"/>
+            <arg value="--reportfile"/>
+            <arg value="${basedir}/build/logs/pmd.xml"/>
+            <arg value="--exclude"/>
+            <arg value="${exclusionlist}"/>
+        </exec>
+    </target>
+
+    <target name="phpcpd" description="Find duplicate code using PHPCPD">
+        <exec executable="${basedir}/library/vendor/bin/phpcpd" dir="${basedir}" logerror="on">
+            <arg value="--log-pmd"/>
+            <arg value="${basedir}/build/logs/pmd-cpd.xml"/>
+            <arg value="--exclude"/>
+            <arg value="library/Doctrine"/>
+            <arg value="--exclude"/>
+            <arg value="library/ExcelExplorerPro"/>
+            <arg value="--exclude"/>
+            <arg value="library/getid3"/>
+            <arg value="--exclude"/>
+            <arg value="library/Zend"/>
+            <arg value="--exclude"/>
+            <arg value="library/ZendX"/>
+            <arg value="--exclude"/>
+            <arg value="library/ZFDebug"/>
+            <arg value="--exclude"/>
+            <arg value="library/GoogleApi"/>
+            <arg value="--exclude"/>
+            <arg value="library/vendor"/>
+            <arg value="--exclude"/>
+            <arg value="library/SeleniumWd"/>
+            <arg value="--exclude"/>
+            <arg value="library/PHPUnitX"/>
+            <arg value="--exclude"/>
+            <arg value="library/Ioda"/>
+            <arg value="--exclude"/>
+            <arg value="library/Html5"/>
+            <arg value="--exclude"/>
+            <arg value="library/Cron"/>
+            <arg value="--exclude"/>
+            <arg value="library/Bootstrap"/>
+            <arg value="--exclude"/>
+            <arg value="public/amfphp"/>
+            <arg value="--exclude"/>
+            <arg value="public/includes/phpchart"/>
+            <arg value="--exclude"/>
+            <arg value="public/includes/phpmailer"/>
+            <arg value="--exclude"/>
+            <arg value="public/includes/xmlchart"/>
+            <arg path="${basedir}"/>
+        </exec>
+    </target>
+
+    <target name="phploc" description="Measure project size using PHPLOC">
+        <exec executable="${basedir}/library/vendor/bin/phploc">
+            <arg value="--log-csv"/>
+            <arg value="${basedir}/build/logs/phploc.csv"/>
+            <arg value="--exclude"/>
+            <arg value="library/Doctrine"/>
+            <arg value="--exclude"/>
+            <arg value="library/ExcelExplorerPro"/>
+            <arg value="--exclude"/>
+            <arg value="library/getid3"/>
+            <arg value="--exclude"/>
+            <arg value="library/Zend"/>
+            <arg value="--exclude"/>
+            <arg value="library/ZendX"/>
+            <arg value="--exclude"/>
+            <arg value="library/ZFDebug"/>
+            <arg value="--exclude"/>
+            <arg value="library/GoogleApi"/>
+            <arg value="--exclude"/>
+            <arg value="library/vendor"/>
+            <arg value="--exclude"/>
+            <arg value="library/SeleniumWd"/>
+            <arg value="--exclude"/>
+            <arg value="library/PHPUnitX"/>
+            <arg value="--exclude"/>
+            <arg value="library/Ioda"/>
+            <arg value="--exclude"/>
+            <arg value="library/Html5"/>
+            <arg value="--exclude"/>
+            <arg value="library/Cron"/>
+            <arg value="--exclude"/>
+            <arg value="library/Bootstrap"/>
+            <arg value="--exclude"/>
+            <arg value="public/amfphp"/>
+            <arg value="--exclude"/>
+            <arg value="public/includes/phpchart"/>
+            <arg value="--exclude"/>
+            <arg value="public/includes/phpmailer"/>
+            <arg value="--exclude"/>
+            <arg value="public/includes/xmlchart"/>
+            <arg path="${basedir}"/>
+        </exec>
+    </target>
+
+    <target name="phpcs" description="Find coding standard violations using PHP_CodeSniffer">
+        <exec executable="${basedir}/library/vendor/bin/phpcs">
+            <arg value="--extensions=php,inc,lib,phtml"/>
+            <arg value="--tab-width=4"/>
+            <arg value="--report=checkstyle"/>
+            <arg value="--report-file=${basedir}/build/logs/checkstyle.xml"/>
+            <arg value="--standard=${basedir}/build/phpcs.xml"/>
+            <arg value="--ignore=${exclusionlist}"/>
+            <arg path="${basedir}"/>
+        </exec>
+    </target>
+
+    <target name="phpcb" description="Aggregate tool output with PHP_CodeBrowser">
+        <exec executable="${basedir}/library/vendor/bin/phpcb">
+            <arg value="--log"/>
+            <arg path="${basedir}/build/logs"/>
+            <arg value="--source"/>
+            <arg path="${basedir}"/>
+            <arg value="--output"/>
+            <arg path="${basedir}/build/code-browser"/>
+            <arg value="--ignore"/>
+            <arg value="${exclusionlist}"/>
+        </exec>
+    </target>
+</project>
