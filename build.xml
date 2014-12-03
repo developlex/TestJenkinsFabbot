@@ -2,7 +2,7 @@
 
 <project name="Orchard" default="build">
     <target name="build"
-            depends="prepare,composer,lint,phpunit,phpcs"/>
+            depends="prepare,composer,parallelTasksForPRBuild,phpunit"/>
 
     <target name="clean" description="Cleanup build artifacts">
         <delete dir="${basedir}/build/api"/>
@@ -10,7 +10,7 @@
         <delete dir="${basedir}/build/coverage"/>
         <delete dir="${basedir}/build/logs"/>
         <delete dir="${basedir}/build/pdepend"/>
-        <delete file="${basedir}/library/composer.lock"/>
+        <delete file="${basedir}/composer.lock"/>
     </target>
 
     <target name="prepare" depends="clean" description="Prepare for build">
@@ -19,6 +19,13 @@
         <mkdir dir="${basedir}/build/coverage"/>
         <mkdir dir="${basedir}/build/logs"/>
         <mkdir dir="${basedir}/build/pdepend"/>
+    </target>
+
+    <target name="parallelTasksForPRBuild"
+            description="Run code analysis tasks in parallel. This is for PR builds only">
+        <parallel threadCount="1">
+            <antcall target="phpcs"/>
+        </parallel>
     </target>
 
     <target name="composer" description="Install dependencies">
@@ -31,41 +38,12 @@
             <arg value="install"/>
             <arg value="--dev"/>
             <arg value="--prefer-dist"/>
-            <arg value="--working-dir=${basedir}/library"/>
+            <arg value="--working-dir=${basedir}"/>
         </exec>
     </target>
 
-    <target name="lint">
-        <apply executable="/usr/local/bin/php" failonerror="true">
-            <arg value="-l"/>
-
-            <fileset dir="${basedir}">
-                <include name="**/*.php"/>
-                <exclude name="library/Doctrine/**"/>
-                <exclude name="library/ExcelExplorerPro/**"/>
-                <exclude name="library/getid3/**"/>
-                <exclude name="library/Zend/**"/>
-                <exclude name="library/ZendX/**"/>
-                <exclude name="library/ZFDebug/**"/>
-                <exclude name="library/GoogleApi/**"/>
-                <exclude name="library/vendor/**"/>
-                <exclude name="library/SeleniumWd/**"/>
-                <exclude name="library/PHPUnitX/**"/>
-                <exclude name="library/Ioda/**"/>
-                <exclude name="library/Html5/**"/>
-                <exclude name="library/Cron/**"/>
-                <exclude name="library/Bootstrap/**"/>
-                <exclude name="public/amfphp/**"/>
-                <exclude name="public/includes/phpchart/**"/>
-                <exclude name="public/includes/phpmailer/**"/>
-                <exclude name="public/includes/xmlchart/**"/>
-            </fileset>
-
-        </apply>
-    </target>
-
     <target name="phpunit" description="Run unit tests with PHPUnit">
-        <exec executable="${basedir}/library/vendor/bin/phpunit" dir="${basedir}/tests" failonerror="false"/>
+        <exec executable="${basedir}/vendor/bin/phpunit" dir="${basedir}/tests" failonerror="false"/>
     </target>
 
     <target name="parallelTasks"
@@ -82,7 +60,7 @@
 
     <target name="pdepend"
             description="Calculate software metrics using PHP_Depend">
-        <exec executable="${basedir}/library/vendor/bin/pdepend">
+        <exec executable="${basedir}/vendor/bin/pdepend">
             <arg value="--jdepend-xml=${basedir}/build/logs/jdepend.xml"/>
             <arg value="--jdepend-chart=${basedir}/build/pdepend/dependencies.svg"/>
             <arg value="--overview-pyramid=${basedir}/build/pdepend/overview-pyramid.svg"/>
@@ -93,7 +71,7 @@
 
     <target name="phpmd"
             description="Perform project mess detection using PHPMD">
-        <exec executable="${basedir}/library/vendor/bin/phpmd" dir="${basedir}">
+        <exec executable="${basedir}/vendor/bin/phpmd" dir="${basedir}">
             <arg value="."/>
             <arg value="xml"/>
             <arg value="codesize,design,unusedcode,naming"/>
@@ -105,7 +83,7 @@
     </target>
 
     <target name="phpcpd" description="Find duplicate code using PHPCPD">
-        <exec executable="${basedir}/library/vendor/bin/phpcpd" dir="${basedir}" logerror="on">
+        <exec executable="${basedir}/vendor/bin/phpcpd" dir="${basedir}" logerror="on">
             <arg value="--log-pmd"/>
             <arg value="${basedir}/build/logs/pmd-cpd.xml"/>
             <arg value="--exclude"/>
@@ -149,7 +127,7 @@
     </target>
 
     <target name="phploc" description="Measure project size using PHPLOC">
-        <exec executable="${basedir}/library/vendor/bin/phploc">
+        <exec executable="${basedir}/vendor/bin/phploc">
             <arg value="--log-csv"/>
             <arg value="${basedir}/build/logs/phploc.csv"/>
             <arg value="--exclude"/>
@@ -193,7 +171,7 @@
     </target>
 
     <target name="phpcs" description="Find coding standard violations using PHP_CodeSniffer">
-        <exec executable="${basedir}/library/vendor/bin/phpcs">
+        <exec executable="${basedir}/vendor/bin/phpcs">
             <arg value="--extensions=php,inc,lib,phtml"/>
             <arg value="--tab-width=4"/>
             <arg value="--report=checkstyle"/>
@@ -205,7 +183,7 @@
     </target>
 
     <target name="phpcb" description="Aggregate tool output with PHP_CodeBrowser">
-        <exec executable="${basedir}/library/vendor/bin/phpcb">
+        <exec executable="${basedir}/vendor/bin/phpcb">
             <arg value="--log"/>
             <arg path="${basedir}/build/logs"/>
             <arg value="--source"/>
