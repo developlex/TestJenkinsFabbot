@@ -2,7 +2,7 @@
 
 <project name="Orchard" default="build">
     <target name="build"
-            depends="prepare,composer,phpunit,pdepend,phpcs"/>
+            depends="prepare,composer,parallelTasksForPRBuild,phpunit"/>
 
     <target name="clean" description="Cleanup build artifacts">
         <delete dir="${basedir}/build/api"/>
@@ -19,6 +19,13 @@
         <mkdir dir="${basedir}/build/coverage"/>
         <mkdir dir="${basedir}/build/logs"/>
         <mkdir dir="${basedir}/build/pdepend"/>
+    </target>
+
+    <target name="parallelTasksForPRBuild"
+            description="Run code analysis tasks in parallel. This is for PR builds only">
+        <parallel threadCount="1">
+            <antcall target="phpcs"/>
+        </parallel>
     </target>
 
     <target name="composer" description="Install dependencies">
