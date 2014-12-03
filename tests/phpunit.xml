@@ -1,0 +1,24 @@
+<phpunit colors="false" stopOnFailure="false">
+    <testsuite name="Orchard">
+        <directory>./php</directory>
+    </testsuite>
+
+    <filter>
+        <blacklist>
+            <directory>../vendor/</directory>
+            <directory>../tests/</directory>
+            <directory>../public/</directory>
+            <directory>../frontend/</directory>
+            <directory>../locale/</directory>
+            <directory>../build/</directory>
+        </blacklist>
+    </filter>
+
+    <logging>
+        <log type="coverage-html" target="../build/coverage" charset="UTF-8" yui="true" highlight="true"
+             lowUpperBound="35" highLowerBound="70"/>
+        <log type="coverage-clover" target="../build/logs/phpunit.coverage.xml"/>
+        <log type="junit" target="../build/logs/phpunit.xml" logIncompleteSkipped="false"/>
+    </logging>
+
+</phpunit>
